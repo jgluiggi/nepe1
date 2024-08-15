@@ -31,8 +31,8 @@ public class FileSimilarity {
                 String file2 = args[j];
                 List<Long> fingerprint1 = fileFingerprints.get(file1);
                 List<Long> fingerprint2 = fileFingerprints.get(file2);
-                float similarityScore = similarity(fingerprint1, fingerprint2);
-                System.out.println("Similarity between " + file1 + " and " + file2 + ": " + (similarityScore * 100) + "%");
+                Thread thread = new Thread(new Similarity(args[i], args[j], fingerprint1, fingerprint2));
+                thread.start();
             }
         }
     }
@@ -78,19 +78,41 @@ public class FileSimilarity {
         return sum;
         }
     }
-    
-    private static float similarity(List<Long> base, List<Long> target) {
-        int counter = 0;
-        List<Long> targetCopy = new ArrayList<>(target);
 
-        for (Long value : base) {
-            if (targetCopy.contains(value)) {
-                counter++;
-                targetCopy.remove(value);
+    public static class Similarity implements Runnable {
+        private final String file1;
+        private final String file2;
+        private final List<Long> fingerprint1;
+        private final List<Long> fingerprint2;
+            
+        public Similarity(String file1, String file2, List<Long> fingerprint1, List<Long> fingerprint2) {
+            this.file1 = file1;
+            this.file2 = file2;
+            
+            this.fingerprint1 = fingerprint1;
+            this.fingerprint2 = fingerprint2;
+        }
+        @Override
+        public void run() {
+            try {
+                float similarityScore = similarity(fingerprint1, fingerprint2);
+                System.out.println("Similarity between " + file1 + " and " + file2 + ": " + (similarityScore * 100) + "%");
+            } catch (IOException ex) {
             }
         }
 
-        return (float) counter / base.size();
+        private static float similarity(List<Long> base, List<Long> target) throws IOException {
+            int counter = 0;
+            List<Long> targetCopy = new ArrayList<>(target);
+
+            for (Long value : base) {
+                if (targetCopy.contains(value)) {
+                    counter++;
+                    targetCopy.remove(value);
+                }
+            }
+
+            return (float) counter / base.size();
+        }
     }
-    
 }
