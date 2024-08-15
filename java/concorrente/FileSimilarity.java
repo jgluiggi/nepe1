@@ -2,20 +2,18 @@ import java.io.*;
 import java.util.*;
 
 public class FileSimilarity {
-
+    // Create a map to store the fingerprint for each file
+    private static Map<String, List<Long>> fileFingerprints = new HashMap<>();
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.err.println("Usage: java Sum filepath1 filepath2 filepathN");
             System.exit(1);
         }
 
-        // Create a map to store the fingerprint for each file
-        Map<String, List<Long>> fileFingerprints = new HashMap<>();
-
         // Calculate the fingerprint for each file
         for (String path : args) {
-            List<Long> fingerprint = fileSum(path);
-            fileFingerprints.put(path, fingerprint);
+            Thread thread = new Thread(new FileOperation(path), path);
+            thread.start();
         }
 
         // Compare each pair of files
@@ -28,6 +26,23 @@ public class FileSimilarity {
                 float similarityScore = similarity(fingerprint1, fingerprint2);
                 System.out.println("Similarity between " + file1 + " and " + file2 + ": " + (similarityScore * 100) + "%");
             }
+        }
+    }
+
+    public static class FileOperation implements Runnable{
+
+    private final String path;
+        
+    public FileOperation(String path) {
+        this.path = path;
+    }
+
+    @Override
+    public void run() {
+        try {
+            List<Long> fingerprint = fileSum(path);
+            fileFingerprints.put(path, fingerprint);
+        } catch (IOException ex) {
         }
     }
 
@@ -51,8 +66,9 @@ public class FileSimilarity {
             sum += Byte.toUnsignedInt(buffer[i]);
         }
         return sum;
+        }
     }
-
+    
     private static float similarity(List<Long> base, List<Long> target) {
         int counter = 0;
         List<Long> targetCopy = new ArrayList<>(target);
@@ -65,5 +81,6 @@ public class FileSimilarity {
         }
 
         return (float) counter / base.size();
-    }
+        }
+    
 }
